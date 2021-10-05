@@ -1,7 +1,8 @@
 name: Presubmit
 on:
-  pull_request:
-    types: [labeled]
+  push:
+    branches:
+      - main
 jobs:
   presubmit:
     runs-on: ubuntu-latest
@@ -18,7 +19,6 @@ jobs:
         run: npm ci
 
       - name: Run a staging build of site
-        if: ${{ steps.presubmit.outputs.isPresubmit == 'true' }}
         run: npm run build
         env:
           ELEVENTY_ENV: staging
@@ -30,7 +30,6 @@ jobs:
       # This will return true if there's a markdown file that was changed
       # in the PR.
       - uses: dorny/paths-filter@v2.2.1
-        if: ${{ steps.presubmit.outputs.isPresubmit == 'true' }}
         id: filter
         with:
           filters: |
@@ -50,11 +49,11 @@ jobs:
       # Only run tests if the PR touches behavior related files.
 
       - name: Test
-        if: ${{ steps.presubmit.outputs.isPresubmit == 'true' && (steps.filter.outputs.js == 'true' || steps.filter.outputs.json == 'true' || steps.filter.outputs.yml == 'true' || steps.filter.outputs.njk == 'true') }}
+        if: ${{ (steps.filter.outputs.js == 'true' || steps.filter.outputs.json == 'true' || steps.filter.outputs.yml == 'true' || steps.filter.outputs.njk == 'true') }}
         run: npm run test
 
       - name: Lighthouse CI
-        if: ${{ steps.presubmit.outputs.isPresubmit == 'true' && (steps.filter.outputs.js == 'true' || steps.filter.outputs.packageJson == 'true' || steps.filter.outputs.njk == 'true' || steps.filter.outputs.scss == 'true') }}
+        if: ${{ (steps.filter.outputs.js == 'true' || steps.filter.outputs.packageJson == 'true' || steps.filter.outputs.njk == 'true' || steps.filter.outputs.scss == 'true') }}
         env:
           LHCI_SERVER: ${{ secrets.LHCI_SERVER }}
           LHCI_TOKEN: ${{ secrets.LHCI_TOKEN }}

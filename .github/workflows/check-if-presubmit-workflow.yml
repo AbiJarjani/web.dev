@@ -13,11 +13,19 @@ jobs:
           fetch-depth: 1
 
       - name: Install dependencies
-        run: npm ci --prefix .github/actions/presubmit
+        run: npm ci
 
       - name: Check if presubmit
-        id: presubmit
+        id: ifPresubmit
         uses: ./.github/actions/presubmit
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           is_presubmit: ${{ contains(github.event.pull_request.labels.*.name, '$-presubmit') }}
+
+      - name: Trigger presubmit workflow
+        if: ${{ steps.presubmit.ifPresubmit.isPresubmit == 'true' }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Presubmit
+          token: ${{ secrets.REPO_PAT }}
+
